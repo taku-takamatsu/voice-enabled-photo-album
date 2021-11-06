@@ -101,21 +101,21 @@ apigClientFactory.newClient = function (config) {
     };
     
     
-    apigClient.uploadPut = function (params, body, additionalParams) {
+    apigClient.uploadFolderSubFolderObjectPut = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['x-amz-meta-customLabels'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['sub-folder', 'object', 'folder', 'x-amz-meta-customLabels'], ['body']);
         
-        var uploadPutRequest = {
+        var uploadFolderSubFolderObjectPutRequest = {
             verb: 'put'.toUpperCase(),
-            path: pathComponent + uritemplate('/upload').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
+            path: pathComponent + uritemplate('/upload/{folder}/{sub-folder}/{object}').expand(apiGateway.core.utils.parseParametersToObject(params, ['sub-folder', 'object', 'folder', ])),
             headers: apiGateway.core.utils.parseParametersToObject(params, ['x-amz-meta-customLabels']),
             queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body
         };
         
         
-        return apiGatewayClient.makeRequest(uploadPutRequest, authType, additionalParams, config.apiKey);
+        return apiGatewayClient.makeRequest(uploadFolderSubFolderObjectPutRequest, authType, additionalParams, config.apiKey);
     };
     
 
