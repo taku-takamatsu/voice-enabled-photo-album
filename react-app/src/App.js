@@ -1,6 +1,6 @@
 import React, { useState, Component } from 'react';
 import Grid from '@material-ui/core/Grid';
-import Search from './components/Search';
+import Transcribe from './components/Transcribe';
 import { Container } from '@material-ui/core';
 
 function App(){
@@ -8,7 +8,7 @@ function App(){
     <Container>
       <Grid container justifyContent='center' alignItems='center' spacing={2}>
         <Grid item> 
-            <Search />
+          <Transcribe/>
         </Grid>
       </Grid>
     </Container>

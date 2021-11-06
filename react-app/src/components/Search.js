@@ -18,7 +18,7 @@ export default function Search() {
             <CardContent>
                 <TextField
                     id="outlined-name"
-                    label="Name"
+                    label="search for your photos"
                     value={value}
                     onChange={handleChange}
                 />
