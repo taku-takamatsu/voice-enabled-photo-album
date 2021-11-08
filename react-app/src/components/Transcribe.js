@@ -7,16 +7,21 @@ import { IconButton } from '@mui/material';
 import MicIcon from '@material-ui/icons/Mic';
 import Search from './Search';
 
-
 Amplify.configure(awsconfig);
-Amplify.addPluggable(new AmazonAIPredictionsProvider());
+
+try{
+  Amplify.addPluggable(new AmazonAIPredictionsProvider());
+} catch {
+  console.log("Pluggable already added")
+}
 
 export default function Transcribe(props) {
-    const [response, setResponse] = useState("Search for photos using text/audio")
+    const { response, setResponse } = props;
   
     function AudioRecorder(props) {
       const [recording, setRecording] = useState(false);
       const [micStream, setMicStream] = useState();
+      
       const [audioBuffer] = useState(
         (function() {
           let buffer = [];
@@ -49,7 +54,7 @@ export default function Transcribe(props) {
   
         window.navigator.mediaDevices.getUserMedia({ video: false, audio: true }).then((stream) => {
           const startMic = new mic();
-  
+          
           startMic.setStream(stream);
           startMic.on('data', (chunk) => {
             var raw = mic.toRaw(chunk);
@@ -59,7 +64,6 @@ export default function Transcribe(props) {
             audioBuffer.addData(raw);
   
           });
-  
           setRecording(true);
           setMicStream(startMic);
         });
@@ -97,7 +101,7 @@ export default function Transcribe(props) {
   
     function convertFromBuffer(bytes) {
       setResponse('Transcribing audio...');
-  
+      
       Predictions.convert({
         transcription: {
           source: {
@@ -110,13 +114,6 @@ export default function Transcribe(props) {
     }
   
     return (
-      <div className="Text">
-        <div>
-          <h3>Voice search</h3>
-          <Search/>
-          <AudioRecorder finishRecording={convertFromBuffer} />
-          <p>{response}</p>
-        </div>
-      </div>
+      <AudioRecorder finishRecording={convertFromBuffer} />
     );
   }
