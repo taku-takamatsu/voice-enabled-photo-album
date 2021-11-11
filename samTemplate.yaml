@@ -17,12 +17,10 @@ Resources:
         PhotoAlbum:
           Type: Api
           Properties:
-            StageName: Dev
             Path: /search
             Method: OPTIONS
         PhotoAlbum:
           Type: Api
           Properties:
-            StageName: Dev
             Path: /upload/{folder}/{sub-folder}/{object}
             Method: OPTIONS
