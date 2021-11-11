@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: CD Deployment CCBD Assignment 2]
+Description: CD Deployment CCBD Assignment 2
 
 Resources:
   PhotoAlbumBucket:
@@ -70,7 +70,7 @@ Resources:
   LambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
-      FunctionName: !GetAtt A2_LF1.Arn
+      FunctionName: !GetAtt A2LF1.Arn
       Action: 'lambda:InvokeFunction'
       Principal: 's3.amazonaws.com'
       SourceAccount: !Sub ${AWS::AccountId}
