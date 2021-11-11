@@ -10,7 +10,7 @@ Resources:
   PhotoAlbumBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: 'CCBD-PhotoAlbumCDBucket'
+      BucketName: 'b1_photo_album_cd_bucket'
   A2LF0CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
