@@ -66,3 +66,12 @@ Resources:
                 Rules:
                   - Name: prefix
                     Value: images/
+  ## required for S3 upload to trigger Lamdba
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt A2_LF1.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 's3.amazonaws.com'
+      SourceAccount: !Sub ${AWS::AccountId}
+      SourceArn: !GetAtt A2_LF1.Arn
