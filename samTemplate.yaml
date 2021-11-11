@@ -14,13 +14,13 @@ Resources:
       Timeout: 15
       Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
       Events:
-        CCBD_Photo_Album:
+        PhotoAlbum:
           Type: Api
           Properties:
             StageName: Dev
             Path: /search
             Method: OPTIONS
-        CCBD_Photo_Album:
+        PhotoAlbum:
           Type: Api
           Properties:
             StageName: Dev
