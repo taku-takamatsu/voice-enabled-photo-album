@@ -9,8 +9,8 @@ Parameters:
 Resources:
   PhotoAlbumBucket:
     Type: AWS::S3::Bucket
-      Properties:
-        BucketName: !Sub 'My-unique-bucket-name-${Env}'
+    Properties:
+      BucketName: !Sub 'My-unique-bucket-name-${Env}'
   A2LF0CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
