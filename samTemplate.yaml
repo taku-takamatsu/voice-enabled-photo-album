@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: CD Demo Lambda
+Description: CD Deployment CCBD Assignment 2
 Resources:
   A2-LF0-CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: LFX
+      FunctionName: A2_LF0
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
       CodeUri: ./lambda_functions/LF0
@@ -14,14 +14,14 @@ Resources:
       Timeout: 15
       Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
       Events:
-        AI Photo Search:
+        CCBD_Photo_Album:
           Type: Api
           Properties:
             StageName: Dev
             Path: /search
             Method: OPTIONS
             RestApiId : ug9ufl
-        AI Photo Search:
+        CCBD_Photo_Album:
           Type: Api
           Properties:
             StageName: Dev
