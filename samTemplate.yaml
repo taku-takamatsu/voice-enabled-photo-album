@@ -20,11 +20,9 @@ Resources:
             StageName: Dev
             Path: /search
             Method: OPTIONS
-            RestApiId : ug9ufl
         CCBD_Photo_Album:
           Type: Api
           Properties:
             StageName: Dev
             Path: /upload/{folder}/{sub-folder}/{object}
             Method: OPTIONS
-            RestApiId : ecbo2r
