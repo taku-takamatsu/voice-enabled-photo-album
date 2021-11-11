@@ -4,16 +4,15 @@ from time import time
 from datetime import datetime
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from dotenv import load_dotenv
+#from dotenv import load_dotenv #not needed for deployment
 import os
 import uuid
-load_dotenv()
 
 session = boto3.Session()
 
 def detect_labels(photo, bucket):
     # https://docs.aws.amazon.com/rekognition/latest/dg/images-s3.html
-    client=session.client('rekognition')
+    client=session.client('rekognition', region_name='us-east-1')
     response = client.detect_labels(Image={'S3Object':{'Bucket':bucket,'Name':photo}},
         MaxLabels=10)
     result = []
@@ -60,11 +59,10 @@ def os_insert_object(document, id, index_name):
 
 def lambda_handler(event, context):
     #get key
-    print(event)
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key'].replace('+', ' ')
     etag = event['Records'][0]['s3']['object']['eTag']
-    #print(bucket, key, etag)
+    print(bucket, key, etag)
     detected_labels = detect_labels(bucket=bucket, photo=key)
     os_object = {
         'objectKey' : key,
@@ -74,15 +72,9 @@ def lambda_handler(event, context):
         'x-amz-meta-customLabels' : get_custom_labels(bucket, key, etag),
         'labels': [x['label'] for x in detected_labels]
     }
-    print(os_object)
     os_insert_object(document=os_object, id=uuid.uuid4(), index_name='ccbd_a2')
     return {
         'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
+        'body': json.dumps('Successfully uploaded image to Opensearch')
     }
 
-
-event = {'Records': [{'eventVersion': '2.1', 'eventSource': 'aws:s3', 'awsRegion': 'us-east-1', 'eventTime': '2021-11-03T02:42:56.782Z', 'eventName': 'ObjectCreated:Put', 'userIdentity': {'principalId': 'A3V0GIJMHU5OV7'}, 'requestParameters': {'sourceIPAddress': '74.101.203.2'}, 'responseElements': {'x-amz-request-id': 'XCXYP02NQNNXZ4Q9', 'x-amz-id-2': 'XqDbDJ2ApxCDBeZtia0gxDrk7MhvdjCpS86/o/5jQFAZi98xkOM8PBGU6ffgH65pGcR5H2RmuAtGdyt22HQmw200/0WX/88T'}, 's3': {'s3SchemaVersion': '1.0', 'configurationId': 'dd48b1cb-89c5-48bb-9a9f-993ff876a514', 'bucket': {'name': 'ccbd-photo-album', 'ownerIdentity': {'principalId': 'A3V0GIJMHU5OV7'}, 'arn': 'arn:aws:s3:::ccbd-photo-album'}, 'object': {'key': 'images/Screen+Shot+2021-11-01+at+12.57.26+PM.png', 'size': 160667, 'eTag': '1d48941df3b8091bf53298990fc26e80', 'sequencer': '006181F730AE0A3B95'}}}]}
-
-
-lambda_handler(event, None)
