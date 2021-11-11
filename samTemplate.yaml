@@ -1,7 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: CD Deployment CCBD Assignment 2
+Parameters:
+  DeploymentStage:
+    Type: String
+    Default: production
+
 Resources:
+  PhotoAlbumBucket:
+    Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Sub 'My-unique-bucket-name-${Env}'
   A2LF0CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -9,7 +18,24 @@ Resources:
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
       CodeUri: ./lambda_functions/LF0
-      Description: 'CCBD Assignment: Lambda function for CORS'
+      Description: 'CCBD Assignment 2: Lambda function for CORS (/upload)'
+      MemorySize: 128
+      Timeout: 15
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Events:
+        PhotoAlbum:
+          Type: Api
+          Properties:
+            Path: /upload/{folder}/{sub-folder}/{object}
+            Method: OPTIONS
+  A2LF0CORS2:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF0_2
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF0_2
+      Description: 'CCBD Assignment 2: Lambda function for CORS (/search)'
       MemorySize: 128
       Timeout: 15
       Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
@@ -19,8 +45,25 @@ Resources:
           Properties:
             Path: /search
             Method: OPTIONS
-        PhotoAlbum:
-          Type: Api
+  A2LF1:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF1
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF1
+      Description: 'CCBD Assignment 2: Lambda function to index photos'
+      MemorySize: 256
+      Timeout: 30
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF1-index-photos-role-wp5z7lis'
+      Events:
+        S3PutObjectEvent:
+          Type: S3
           Properties:
-            Path: /upload/{folder}/{sub-folder}/{object}
-            Method: OPTIONS
+            Bucket: !Ref PhotoAlbumBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: images/
