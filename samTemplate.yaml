@@ -1,16 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: CD Deployment CCBD Assignment 2
-Parameters:
-  DeploymentStage:
-    Type: String
-    Default: production
+Description: CD Deployment CCBD Assignment 2]
 
 Resources:
   PhotoAlbumBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: 'b1-photo-album-cd-bucket'
+      BucketName: 'cd-photo-album-b1'
   A2LF0CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -39,6 +35,9 @@ Resources:
       MemorySize: 128
       Timeout: 15
       Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Policies:
+        S3ReadPolicy:
+          BucketName: !Ref PhotoAlbumBucket
       Events:
         PhotoAlbum:
           Type: Api
