@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: CD Deployment CCBD Assignment 2
 Resources:
-  A2-LF0-CORS:
+  A2_LF0_CORS:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: A2_LF0
