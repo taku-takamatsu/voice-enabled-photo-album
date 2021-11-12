@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CF A2
+Resources:
+  A2LF0CORS:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF0
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF0
+      Description: 'CCBD Assignment 2: Lambda function for CORS (/upload)'
+      MemorySize: 128
+      Timeout: 15
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Events:
+        PhotoAlbum:
+          Type: Api
+          Properties:
+            Path: /upload/{folder}/{sub-folder}/{object}
+            Method: OPTIONS
+  A2LF0CORS2:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF0_2
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF0_2
+      Description: 'CCBD Assignment 2: Lambda function for CORS (/search)'
+      MemorySize: 128
+      Timeout: 15
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Policies:
+        S3ReadPolicy:
+          BucketName: !Ref PhotoAlbumBucket
+      Events:
+        PhotoAlbum:
+          Type: Api
+          Properties:
+            Path: /search
+            Method: OPTIONS
+  A2LF1:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF1
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF1
+      Description: 'CCBD Assignment 2: Lambda function to index photos'
+      MemorySize: 256
+      Timeout: 30
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF1-index-photos-role-wp5z7lis'
+      Layers: [arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-opensearch-py:1,arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24]
+      Events:
+        S3PutObjectEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref PhotoAlbumBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: images/
+  A2LF2:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: A2_LF2
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./lambda_functions/LF2
+      Description: 'CCBD Assignment 2: Lambda function to search photos in Elastic Search'
+      MemorySize: 256
+      Timeout: 30
+      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF2-search-photos-role-o6u2gzjt'
+      Layers: [arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-aws-requests-auth:16,arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24]
+      Events:
+        PhotoAlbum:
+          Type: Api
+          Properties:
+            Path: /search
+            Method: GET
+  ## required for S3 upload to trigger Lamdba
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt A2LF1.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 's3.amazonaws.com'
+      SourceAccount: !Sub ${AWS::AccountId}
+      SourceArn: !GetAtt PhotoAlbumBucket.Arn
+  ServerlessRestApiDeploymentb2888a1f04:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: ServerlessRestApi
+      Description: RestApi deployment
+      StageName: Stage
+  ServerlessRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Body:
+        info:
+          version: '1.0'
+          title:
+            Ref: AWS::StackName
+        paths:
+          "/search-photos":
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${searchPhotos.Arn}/invocations
+              responses: {}
+        swagger: '2.0'
+  searchPhotosLambdaAPIPermissionProd:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Ref: searchPhotos
+      SourceArn:
+        Fn::Sub:
+        - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/search-photos
+        - __Stage__: "*"
+          __ApiId__:
+            Ref: ServerlessRestApi
+  PhotoAlbumBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 'cd-photo-album-b1'
+  ESInstance:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName: functional-elastic-search
+      ElasticsearchClusterConfig:
+        InstanceType: m3.medium.elasticsearch
