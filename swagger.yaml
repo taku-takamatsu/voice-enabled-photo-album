@@ -36,7 +36,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /upload:
+  /upload/folder/sub-folder/object:
     put:
       summary: photo upload method
       description: |
