@@ -1,17 +1,34 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
 Description: CF A2
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: "voice-enabled-photo-search"
+
+  GitHubBranch:
+    Type: String
+    Default: "main"
+
+  GitHubToken:
+    Type: String
+
+  GitHubUser:
+    Type: String
+
 Resources:
+  ## Lambda Functions
   A2LF0CORS:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: A2_LF0
+      FunctionName: A2_LF0_CICD
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
-      CodeUri: ./lambda_functions/LF0
+      CodeUri: s3://ccdb-lambda-pipeline/46eafe652fc319ada3626d6aea746f31
       Description: 'CCBD Assignment 2: Lambda function for CORS (/upload)'
       MemorySize: 128
       Timeout: 15
-      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Role: arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv
       Events:
         PhotoAlbum:
           Type: Api
@@ -19,19 +36,20 @@ Resources:
             Path: /upload/{folder}/{sub-folder}/{object}
             Method: OPTIONS
   A2LF0CORS2:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: A2_LF0_2
+      FunctionName: A2_LF0_2_CICD
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
-      CodeUri: ./lambda_functions/LF0_2
+      CodeUri: s3://ccdb-lambda-pipeline/46eafe652fc319ada3626d6aea746f31
       Description: 'CCBD Assignment 2: Lambda function for CORS (/search)'
       MemorySize: 128
       Timeout: 15
-      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv'
+      Role: arn:aws:iam::958611120422:role/service-role/A2-LF0-CORS-role-qavwwkmv
       Policies:
         S3ReadPolicy:
-          BucketName: !Ref PhotoAlbumBucket
+          BucketName:
+            Ref: PhotoAlbumBucket
       Events:
         PhotoAlbum:
           Type: Api
@@ -39,40 +57,46 @@ Resources:
             Path: /search
             Method: OPTIONS
   A2LF1:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: A2_LF1
+      FunctionName: A2_LF1_CICD
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
-      CodeUri: ./lambda_functions/LF1
+      CodeUri: s3://ccdb-lambda-pipeline/631b95ca721923647401ef579f062bf1
       Description: 'CCBD Assignment 2: Lambda function to index photos'
       MemorySize: 256
       Timeout: 30
-      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF1-index-photos-role-wp5z7lis'
-      Layers: [arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-opensearch-py:1,arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24]
+      Role: arn:aws:iam::958611120422:role/service-role/A2-LF1-index-photos-role-wp5z7lis
+      Layers:
+      - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-opensearch-py:1
+      - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24
       Events:
         S3PutObjectEvent:
           Type: S3
           Properties:
-            Bucket: !Ref PhotoAlbumBucket
+            Bucket:
+              Ref: PhotoAlbumBucket
             Events: s3:ObjectCreated:*
             Filter:
               S3Key:
                 Rules:
-                  - Name: prefix
-                    Value: images/
+                - Name: prefix
+                  Value: images/
   A2LF2:
-    Type: 'AWS::Serverless::Function'
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: A2_LF2
+      FunctionName: A2_LF2_CICD
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
-      CodeUri: ./lambda_functions/LF2
-      Description: 'CCBD Assignment 2: Lambda function to search photos in Elastic Search'
+      CodeUri: s3://ccdb-lambda-pipeline/719b94ea9be8b1355b2fefde72cf86e8
+      Description: 'CCBD Assignment 2: Lambda function to search photos in Elastic
+        Search'
       MemorySize: 256
       Timeout: 30
-      Role: 'arn:aws:iam::958611120422:role/service-role/A2-LF2-search-photos-role-o6u2gzjt'
-      Layers: [arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-aws-requests-auth:16,arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24]
+      Role: arn:aws:iam::958611120422:role/service-role/A2-LF2-search-photos-role-o6u2gzjt
+      Layers:
+      - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-aws-requests-auth:16
+      - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:24
       Events:
         PhotoAlbum:
           Type: Api
@@ -81,14 +105,29 @@ Resources:
             Method: GET
   ## required for S3 upload to trigger Lamdba
   LambdaInvokePermission:
-    Type: 'AWS::Lambda::Permission'
+    Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt A2LF1.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: 's3.amazonaws.com'
-      SourceAccount: !Sub ${AWS::AccountId}
-      SourceArn: !GetAtt PhotoAlbumBucket.Arn
-  ServerlessRestApiDeploymentb2888a1f04:
+      FunctionName:
+        Fn::GetAtt:
+        - A2LF1
+        - Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount:
+        Fn::Sub: ${AWS::AccountId}
+      SourceArn:
+        Fn::GetAtt:
+        - PhotoAlbumBucket
+        - Arn
+  ReactAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 'cd-b1'
+  PhotoAlbumBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 'cd-b2'
+  ServerlessRestApiDeployment:
     Type: AWS::ApiGateway::Deployment
     Properties:
       RestApiId:
@@ -104,35 +143,403 @@ Resources:
           title:
             Ref: AWS::StackName
         paths:
-          "/search-photos":
+          "/search":
             get:
               x-amazon-apigateway-integration:
-                httpMethod: POST
+                httpMethod: GET
                 type: aws_proxy
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${searchPhotos.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${A2LF2.Arn}/invocations
+              responses: {}
+          "/upload/{folder}/{sub-folder}/{object}":
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: PUT
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:s3:path/PhotoAlbumBucket
               responses: {}
         swagger: '2.0'
-  searchPhotosLambdaAPIPermissionProd:
+  AF2LambdaAPIPermissionProd:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       FunctionName:
-        Ref: searchPhotos
+        Ref: A2LF2
       SourceArn:
         Fn::Sub:
-        - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/search-photos
+        - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/search
         - __Stage__: "*"
           __ApiId__:
             Ref: ServerlessRestApi
-  PhotoAlbumBucket:
-    Type: AWS::S3::Bucket
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
     Properties:
-      BucketName: 'cd-photo-album-b1'
-  ESInstance:
-    Type: AWS::Elasticsearch::Domain
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codebuild.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: client-code-build-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+              - Resource:
+                  - !Sub arn:aws:s3:::${PhotoAlbumBucket}/*
+                  - !Sub arn:aws:s3:::${ReactAppBucket}/*
+                  - !Sub arn:aws:s3:::${ReactAppBucket}
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                  - s3:ListObjects
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
     Properties:
-      DomainName: functional-elastic-search
-      ElasticsearchClusterConfig:
-        InstanceType: m3.medium.elasticsearch
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codepipeline.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: code-pipeline-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub arn:aws:s3:::${PhotoAlbumBucket}/*
+                  - !Sub arn:aws:s3:::${ReactAppBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:ListObjects
+              - Resource:
+                  - arn:aws:s3:::*
+                Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - iam:PassRole
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - lambda:*
+
+  ClientBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: "CODEPIPELINE"
+      Source:
+        Type: "CODEPIPELINE"
+        BuildSpec: |
+          version: 0.1
+          phases:
+            install:
+              commands:
+                - echo Installing packages for client
+                - npm install
+            build:
+              commands:
+                - echo Building client
+                - npm run build
+          artifacts:
+            files:
+              - 'build/**/*'
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: PUBLIC_URL
+            Value: '/'
+      Name: !Sub ${AWS::StackName}-build-client
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  DeployClientBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: "CODEPIPELINE"
+      Source:
+        Type: "CODEPIPELINE"
+        BuildSpec: |
+          version: 0.1
+          phases:
+            build:
+              commands:
+                - echo Deploying client to S3
+                - cd ./build && aws s3 cp . s3://$S3_CLIENT_BUCKET --recursive > deploymentResult.txt
+          artifacts:
+            files: build/deploymentResult.txt
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: S3_CLIENT_BUCKET
+            Value: !Ref ReactAppBucket
+      Name: !Sub ${AWS::StackName}-deploy-client
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PhotoAlbumBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: ClientBuildStep
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref ClientBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: ClientBuild
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: ClientDeployStep
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref DeployClientBuildProject
+              InputArtifacts:
+                - Name: ClientBuild
+              OutputArtifacts:
+                - Name: ClientDeploymentOutput
+              RunOrder: 1
+  # LabelOne:
+  #   Type: AMAZON.AlphaNumeric
+
+  # LabelTwo:
+  #   Type: AMAZON.AlphaNumeric
+
+  # GetLabelsIntent:
+  #     Type: Custom::LexIntent
+  #     DependsOn:
+  #     - LabelOne
+  #     - LabelTwo
+  #     Properties:
+  #       sampleUtterances:
+  #         - "{labelOne}"
+  #         - "{labelOne} and {labelTwo}"
+  #         - "show me {labelOne}"
+  #         - "show me photos with {labelOne} in them"
+  #         - "show me photos with {labelOne} and{labelTwo} in them"
+  #         - "photos of {labelOne}"
+  #         - "pictures of {labelOne}"
+  #         - "pictures of {labelOne} and {labelTwo}"
+  #         - "photos of {labelOne} and {labelTwo}"
+  #         - "show me {labelOne} and {labelTwo}"
+  #         - "show me pictures of {labelOne} and {labelTwo}"
+  #         - "show me photos of {labelOne}"
+  #         - "show me pictures of {labelOne}"
+  #         - "show me photos of {labelOne} and labelTwo}"
+  #       slots:
+  #       - name: LabelOne
+  #         description: "label of first image"
+  #         priority: 1
+  #         slotConstraint: Required
+  #         slotType: 
+  #           Ref: LabelOne
+  #         slotTypeVersion: "$LATEST"
+  #       - name: LabelTwo
+  #         description: "label of second image"
+  #         priority: 2
+  #         slotType: 
+  #           Ref: LabelTwo
+  #         slotTypeVersion: "$LATEST"
+  # conciergeBot:
+  #   Type: Custom::LexBot
+  #   DependsOn:
+  #     - GetLabelsIntent
+  #   Properties: 
+  #     abortStatement:
+  #       messages:
+  #         - content: "I don't understand. Can you try again?"
+  #           contentType: "PlainText"
+  #         - content: "I'm sorry, I don't understand."
+  #           contentType: "PlainText"
+  #     childDirected: false
+  #     clarificationPrompt:
+  #       maxAttempts: 2
+  #       messages:
+  #         - content: "I'm sorry, I didn't hear that. Can you repeate what you just said?"
+  #           contentType: "PlainText"
+  #         - content: "Can you say that again please?"
+  #           contentType: "PlainText"
+  #     description: 'photo search bot'
+  #     idleSessionTTLInSeconds: 300
+  #     intents:
+  #       - intentName:
+  #           Ref: GetLabelsIntent
+  #         intentVersion: "$LATEST" # always use the latest intent
+  #     locale: en-US 
+  #     processBehavior: "BUILD"
+  # ESInstance:
+  #   Type: AWS::OpenSearchService::Domain
+  #   Properties:
+  #     EngineVersion: OpenSearch_1.0
+  #     AccessPolicies: 
+  #       {
+  #         "Statement": [
+  #           {
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "Federated": "cognito-identity.amazonaws.com"
+  #             },
+  #             "Action": "sts:AssumeRoleWithWebIdentity",
+  #             "Condition": {
+  #               "StringEquals": {
+  #                 "cognito-identity.amazonaws.com:aud": "us-east-1:89d6fb98-6403-4f94-b002-e21d60aa15a7"
+  #               },
+  #               "ForAnyValue:StringLike": {
+  #                 "cognito-identity.amazonaws.com:amr": "authenticated"
+  #               }
+  #             }
+  #           },
+  #           {
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": "*"
+  #             },
+  #             "Action": "es:*",
+  #             "Resource": "arn:aws:es:us-east-1:958611120422:domain/*"
+  #           },
+  #           {
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": "arn:aws:iam::958611120422:role/Cognito_voiceenabledphotoalbmAuth_Role"
+  #             },
+  #             "Action": "es:ESHttp*",
+  #             "Resource": "arn:aws:es:us-east-1:958611120422:domain/*"
+  #           },
+  #           {
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": "arn:aws:iam::958611120422:role/service-role/A2-LF1-index-photos-role-wp5z7lis"
+  #             },
+  #             "Action": "es:*",
+  #             "Resource": "arn:aws:es:us-east-1:958611120422:domain/*"
+  #           },
+  #           {
+  #             "Sid": "",
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": "*"
+  #             },
+  #             "Action": "es:*",
+  #             "Resource": "arn:aws:es:us-east-1:958611120422:domain/*",
+  #             "Condition": {
+  #               "IpAddress": {
+  #                 "aws:SourceIp": [
+  #                   "192.168.1.0",
+  #                   "192.168.1.1",
+  #                   "74.101.203.2",
+  #                   "160.39.220.18",
+  #                   "160.39.174.139"
+  #                 ]
+  #               }
+  #             }
+  #           },
+  #           {
+  #             "Effect": "Allow",
+  #             "Principal": {
+  #               "AWS": "arn:aws:iam::958611120422:user/I-Hun-Chan"
+  #             },
+  #             "Action": "es:*",
+  #             "Resource": "arn:aws:es:us-east-1:958611120422:domain/*"
+  #           }
+  #         ]
+  #       }
+  #     CognitoOptions: 
+  #       Enabled: true
+  #       IdentityPoolId: us-east-1:89d6fb98-6403-4f94-b002-e21d60aa15a7
+  #       RoleArn: arn:aws:iam::958611120422:role/Cognito_voiceenabledphotoalbmAuth_Role
+  #       UserPoolId: us-east-1_pwTBLQIr9
+  #     DomainName: functional-open-search
+  #     ClusterConfig:
+  #       InstanceCount: 1
+  #       InstanceType: t3.small.search
+  #     EBSOptions:
+  #       EBSEnabled: true
+  #       VolumeSize: 10
+  #       VolumeType: gp2
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt
+      - ReactAppBucket
+      - WebsiteURL
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !GetAtt
+          - ReactAppBucket
+          - DomainName
+    Description: Name of S3 bucket to hold website content
