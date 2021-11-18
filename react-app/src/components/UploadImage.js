@@ -90,7 +90,7 @@ export default function UploadButtons(props) {
         <label htmlFor="contained-button-file">
             <Input accept="image/*" id="contained-button-file" multiple type="file" onChange={handleUpload}/>
             <Button variant="outlined" component="span">
-            Upload
+            UploadButton
             </Button>
         </label>
         <Dialog open={openModal && fileNames.data.length > 0} onClose={handleModalClose}>
