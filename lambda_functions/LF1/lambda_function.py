@@ -59,6 +59,7 @@ def os_insert_object(document, id, index_name):
 
 def lambda_handler(event, context):
     #get key
+    print('test')
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key'].replace('+', ' ')
     etag = event['Records'][0]['s3']['object']['eTag']
