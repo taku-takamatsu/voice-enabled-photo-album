@@ -1,5 +1,5 @@
 # Cloud Computing & Big Data: Assignment 2: Voice Enabled Photo Album #
-### I Hun Chan (ic2552) & Taku Takamatsu (tt2828) ###
+### I Hun Chan & Taku Takamatsu ###
 
 ## About ##
 
