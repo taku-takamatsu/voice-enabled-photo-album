@@ -16,7 +16,8 @@ Core features of this project include:
 8. AWS CloudFormation stack to represent project infrastructure.
 
 ## Website Link ##
-https://d2k86w9rdaqc1c.cloudfront.net
+https://d2k86w9rdaqc1c.cloudfront.net (Search may be slow due to cold start) 
+- Try "tree", "cats", "dog", "fruits", etc. 
 
 Sample Architecture (From Assignment): 
 <img src="voice-enabled-photo-search-architecture.jpg" />
